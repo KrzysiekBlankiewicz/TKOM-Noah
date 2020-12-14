@@ -1,0 +1,134 @@
+OPIS:
+Jêzyk ma s³u¿yæ opisowi "animacji".
+Ma okreœlaæ wygl¹d i ruch kszta³tów pojawiaj¹cych siê na ekranie.
+Najwa¿niejsze ¿eby dla ka¿dego elementu da³o siê:
+	opisaæ wygl¹d
+	zaprojektowaæ ruch
+	modyfikowaæ wygl¹d
+
+
+-------------------------------------------------------
+
+init...(****)
+
+deklaracje/definicje rzeczy...(*)
+
+okreœlenie obiektów do wyœwietlania (***)
+
+funkcje "globalne" do dowolnych celów
+
+funkcja main() do wo³ana co klatkê...
+(wewn¹trz coœ a la switch z dowolnymi warunkami)
+
+-------------------------------------------------------
+
+(*) 
+class domek
+{
+	int x;
+	rectangle field1;
+	rectangle field2;
+	triangle field3;
+
+	draw() (**)
+	// poza tym dowolne metody
+}
+
+class miasteczko
+{
+	rectangle ulica;
+	domek dom1;
+	domek dom2;
+}
+
+ka¿dy obiekt ma domyœlnie pola: x, y, visible
+
+field 1 ma swoje x1, x2 (te s¹ przesuniêciem wzglêdem wspó³rzêdnych rodzica), length, width, visible
+
+-------------------------------------------------------
+
+(**)
+ta jest ta wo³ana co klatkê
+Ona ma wywo³aæ draw() dla swoich sk³adowych - ja nie bêdê wywo³ywaæ field1.draw().
+Ona co do zasady tylko rysuje, nie zmienia
+
+-------------------------------------------------------
+
+(***)
+domek x;
+collection<domek> y[3];
+
+Tu w trochê nudny sposób wymieniamy wszystko co siê kiedykolwiek pojawi...
+
+
+-------------------------------------------------------
+
+(****) 
+w init:
+	okreœlam rozmiar display
+	okreœlam prêdkoœæ przep³ywu czasu, d³ugoœæ animacji
+
+-------------------------------------------------------
+
+Typy wbudowane:
+	int
+	bool
+	double
+	char
+	rectangle
+		int x1
+		int y1
+		int x2
+		int y2
+		bool visible
+		bool filled
+	trianle
+		int x1
+		int y1
+		int x2
+		int y2
+		int x3
+		int y3
+		bool visible
+		bool filled
+	line
+		int x1
+		int y2
+		int x2
+		int y2
+		bool visible
+	circle
+		int x
+		int y
+		int r
+		bool visible
+		bool filled
+
+-------------------------------------------------------
+
+KONTROLOWANIE RUCHU OBIEKTU:
+1) za pomoc¹ metod "klasy":
+	mogê w draw wywo³aæ motodê x(), któa bedzie zmieniaæ po³o¿enie obiektów
+2) funkcj¹ globaln¹, która bêdzie wywo³ywana w main
+	ta funkcja globalna mo¿e wzi¹æ argument np. samochód przez referencjê/wskaŸnik i coœ w nim porzeŸbiæ
+3) po zadaanej œcie¿ce
+	nie wiem czy i jak to zrobiê, ale by³oby fajnie
+	
+-------------------------------------------------------
+
+ZMIANA KOLEJNOŒCI WYŒWIETLANIA
+
+-------------------------------------------------------
+
+GRUPOWANIE OBIEKTÓW, TABLICE, itp.
+
+-------------------------------------------------------
+UWAGI:
+Pisz¹cy program bezpoœrednio nie ma kontroli nad przep³ywem sterowania.
+Mam problem z pêtl¹ u¿ywanie_funkcji_w_klasach<->klasy_argumentami_funkcji
+
+"TESTY":
+jak chcia³bym ¿eby obiekt wyœwietla³ siê dopiero od pewnego momentu
+	w funkcji globalnej wo³anej w main() albo w metodzie wo³anej w draw() zmieniam obiekt.visible
+jak mam dwa obiekty tego samego typu (np. domek, samochód) i chcê ¿eby inaczej siê zachowywa³y
+	w main wo³am funcjê globaln¹ na samochód1

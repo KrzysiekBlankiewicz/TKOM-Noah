@@ -1,0 +1,95 @@
+	Opis funkcjonalnoœci:
+
+Celem projektu jest stworzenie jêzyka (w³aœc. kompilatora jêzyka) opisu prostych animacji 2D.
+Przez proste animacje 2D rozumiem sekwencje ruchów figur geometrycznych na p³aszczyŸnie. 
+Animacja sk³ada siê z klatek. Klatka (analogicznie jak w filmie) to obraz p³aszczyzny ekrazu w danym momencie czasu.
+Jako ¿e nie wymyœli³em jeszcze satysfakcjonuj¹cej nazwy jêzyka, na potrzeby tego opisu nazywam go "XXX".
+Zatem program napisany w jêzyju "XXX" bêdzie definiowa³ pewne obiekty sk³adaj¹ce siê z figur geometrycznych (b¹dŸ bêd¹ce figurami geometrycznymi) oraz opisywa³ ich poruszanie siê w pewnych ramach czasowych po p³aszczyŸnie ekranu.
+
+Tak¿e zasadnicze cele jakie stawiam przed tworzonym jêzykiem to:
+-mo¿liwoœæ zdefiniowania wygl¹du obiektów graficznych
+-mo¿liwoœæ opisania ruchu obiektów
+-mo¿liwoœæ opisania modyfikacji wygl¹du obiektów
+-zmiana kolejnoœci wyœwietlania
+
+Program bêd¹cy efektem koñcowym projektu, w ramach swojego dzia³ania poza kompilacj¹ programu w "XXX" bêdzie równie¿ generowa³ zadan¹ animacjê.
+
+	
+	Opis jêzyka:
+
+Program w jêzyku "XXX" bêdzie sk³ada³ siê z 5 zadasniczych czêœci.
+1) inicjalizacje
+2) definicje klas
+3) definicje obiektów wystêpuj¹cych w animacji
+4) definicje funkcji (metod globalnych)
+5) funkcja main()
+
+1) inicjalizacje
+	wskazanie parametrów dotycz¹cych ca³oœci animacji jak czas trwania, prêdkoœæ, wielkoœæ ekranu.
+2) definicje klas
+	"Klasa" w "XXX" przypomina strukturê w C. Jest zgrupowaniem obiektów (typów wbudowanych lub innych klas) z zestawem metod operuj¹cych na tych obiektach. Obiekt bêd¹cy elementem klasy nazywamy polem tej klasy.
+	Kluczowa jest metoda draw(). Jest ona wywo³ywana co klatkê. Przede wszystkim ma okreœlaæ sposób obrazowania obiektu klasy na ekranie. W ramach draw() mo¿na wywo³aæ inne metody zmieniaj¹ce po³o¿enie/parametry/wygl¹d pól obiektu klasy. 
+3) definicje obiektów wystêpuj¹cych w animacji
+	Analogicznie jak w jêzykach obiektowych, wskazanie obiektów (typów wbudowanych lub w³asnych klas), które pojawi¹ siê w animacji.
+4) definicje funkcji (metod globalnych)
+	Funkcje s¹ metodami dostepnymi globalnie. Mog¹ byæ wywo³ywane zarówno w metodach klas, jak i w funkcji main.
+5) funkcja main()
+	Jest funkcj¹ globaln¹ wywo³ywan¹ co klatkê. Gdyby wyobraziæ sobie klasê odpowiadaj¹c¹ ca³ej animacji, to main() by³aby jej metod¹ draw().
+
+Typy wbudowane:
+	\item int
+	\item bool
+	\item double
+	\item char
+	\item rectangle
+	\item triangle
+	\item circle
+	\item line
+
+	te ostatnie odpowienio z³ozone z wieloma polami
+
+	Przyk³ady konstrukcji jêzykowych (z semantyk¹):
+//to robimy w ramach poprzedniego punktu
+
+
+	Formalna specyfikacja i sk³adnia:
+	-jêzyka
+	-wejœcia
+	-danych konfiguracyjnych
+	-itp.
+
+//to bêdzie ebnf. Zrobiê go jutro
+
+
+Analiza wymagañ funkcjonalnych/niefunkcjonalnych:
+
+Sposób uruchomienia, wejœcie/wyjœcie:
+
+
+	Opis sposobu realizacji:
+
+Projekt bêdzie sk³ada³ siê z tzrech modu³ów:
+1) leksera
+2) parsera
+3) executora (zach)
+
+1) lekser
+	Pobiera na wejœciu plik z programem w jêzyku "XXX". Jego zadaniem jest generowanie kolejnych tokenów na ¿¹danie parsera.
+1.1) tokeny
+	
+2) parser
+	bêdzie parserem RD (rekurencyjnym, zstêpuj¹cym). Na podstawie kolejnych tokenów tworzy drzewo wyprowadzenia programu.
+2.2) Drzewo wyprowadzenia
+
+3) executor
+	Ten modu³ jest odpowiedzialny za stworzenie animacji. Na tym etapie realizacji jeszcze nie w pe³ni mam wyobra¿enie o jego dzia³aniu. Na pewno istotn¹ jego czêœci¹ jest interfejs
+
+-interfejsów miêdzy modu³ami
+-struktury danych
+-formy poœrednie
+
+	Opis testowania:
+Lekser bêdzie testowany prostym programem wywo³uj¹cym go i wypisuj¹cym na konsolê kolejne tokeny.
+Newralgicznym wydaje siê testowanie parsera, jako ¿e efektem jego dzia³ania jest potencjalnie bardzo z³o¿one drzewo. 
+Do tego celu stworzy³em pomocniczy program przedstawiaj¹cy odpowiednio skontruowane drzewo w postaci graficznej z mo¿liwoœci¹ interaktywnego poruszania siê po wêz³ach. 
+Wydaje mi siê, ¿e bêdzie to wystarczaj¹ce do efektywnego "debugowania" parsera.

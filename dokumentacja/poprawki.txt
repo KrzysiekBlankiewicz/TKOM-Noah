@@ -1,0 +1,5 @@
+TKOM project
+
+identifier przy class
+testy jednostkowe dla parsera i leksera
+variable + type jako jeden człon

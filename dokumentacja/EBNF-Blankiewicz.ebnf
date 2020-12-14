@@ -1,0 +1,62 @@
+(*
+Krzysztof Blankiewicz
+projekt z TKOM - język UnoG
+*)
+
+program = init, classes, objects, functions, main;
+
+(*STRUKTURA PROGRAMU*)
+init = ; (*zostanie doprecyzowany*)
+
+classes = {class};
+class = 'class', '{', {declaration}, {function_definition} , '}';
+
+objects = 'objects', block_instruction;
+
+functions = {function_definition};
+function_definition = type_name, function_name, '(', parameter_list, ')', block_instruction;
+function_call = function_name, '(', agrument_list, ')';
+parameter_list = {type_name, variable, ','};
+agrument_list = {arithmetic_expression, ','};
+
+main = 'main', block_instruction;
+
+(*STATEMENTS / EXPRESSIONS*)
+block_instruction = '{', {statement}, '}';
+statement = block_instruction | if_statement | loop | assignment | declaration | return_statement;
+declaration = type_name, variable, ['=', arithmetic_expression];
+assignment = variable, '=', arithmetic_expression, ';';
+return_statement = 'return', arithmetic_expression, ';';
+if_statement = 'if', '(', conditional_statement, ')', statement, ['else', statement];
+loop = for_loop;
+for_loop = 'for', '(', (declaration | assignment), conditional_statement, ';', assignment, ')', block_instruction;
+conditional_statement = and_expression, {or_operator, and_expression};
+and_expression = or_expression, {and_operator, or_expression};
+or_expression = [unary_not], relacion_expression, {relation_operator, [unary_not], relation_expression};
+relacion_expression = arithmetic_expression | ('(', conditional_statement, ')');
+or_operator = '|';
+and_operator = '&';
+relation_operator = '==' | '!=' | '>' | '<' | '>=' | '<=';
+unary_not = '!';
+
+(*ARITHMETIC EXPRESSIONS*)
+arithmetic_expression = add_expression, {add_operator, add_expression};
+add_expression = mult_expression, {mult_operator, mult_expression};
+mult_expression = term;
+term = [unary_not], (natural_number | variable | function_call | ('(', arithmetic_expression, ')'));
+add_operator = '+' | '-';
+mult_operator = '*' | '/';
+
+
+(*TERMS*)
+natural_number = '0' | positive_number;
+positive_number = non_zero_digit, {digit};
+digit = '0' | non_zero_digit;
+non_zero_digit = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+
+variable = identifier | tablicoweTODO;
+function_name = identifier;
+type_name = identifier;
+identifier = letter, {letter | digit | char_accepted_in_identifier};
+letter = 'q'| 'w'| 'e'| 'r'| 't'| 'y'| 'u'| 'i'| 'o'| 'p'| 'a'| 's'| 'd'| 'f'| 'g'| 'h'| 'j'| 'k'| 'l'| 'z'| 'x'| 'c'| 'v'| 'b'| 'n'| 'm';
+char_accepted_in_identifier = '_';
