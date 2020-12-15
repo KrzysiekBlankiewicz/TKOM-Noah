@@ -9,7 +9,6 @@ std::optional<std::unique_ptr<Token>> LexerTester::test_produceIdentifier()
     return this->produceIdentifier();
 }
 
-/*
 std::optional<std::unique_ptr<Token>> LexerTester::test_produceNumber()
 {
     return this->produceNumber();
@@ -19,7 +18,7 @@ std::optional<std::unique_ptr<Token>> LexerTester::test_produceOperator()
 {
     return this->produceOperator();
 }
-
+/*
 std::unique_ptr<Token> LexerTester::test_produceSpecial()
 {
     return this->produceSpecial();
@@ -29,6 +28,7 @@ std::unique_ptr<Token> LexerTester::test_produceSpecial()
 
 void LexerTester::test_skipWhiteSpacesAndComments()
 {
+    skipWhiteSpacesAndComments();
 }
 
 bool LexerTester::test_isOperator(char charToCheck)
@@ -36,7 +36,12 @@ bool LexerTester::test_isOperator(char charToCheck)
     return false;
 }
 
-int LexerTester::test_parseSingleNumberFromSource()
+std::optional<int> LexerTester::test_parseIntegerPartFromSource()
 {
-    return 0;
+    return parseIntegerPartFromSource();
+}
+
+std::optional<double> LexerTester::test_parseFractionalPartFromSource()
+{
+    return parseFractionalPartFromSource();
 }

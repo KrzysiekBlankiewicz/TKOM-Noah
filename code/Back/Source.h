@@ -14,5 +14,7 @@ public:
 	char getNextChar();
 	bool isEndOfInput();
 	virtual void processOneChar() = 0;
+
+	static const char CHAR_AFTER_INPUT_END = '@';	// dowolny char spoza jêzyka
 };
 

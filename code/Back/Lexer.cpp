@@ -16,24 +16,6 @@ Lexer::Lexer(Source* newSource)
     currentToken = nullptr;
 }
 
-void Lexer::loadStandardOperators()
-{
-    predefinedSymbols.addOperator("+");
-    predefinedSymbols.addOperator("-");
-    predefinedSymbols.addOperator("*");
-    predefinedSymbols.addOperator("/");
-    predefinedSymbols.addOperator("[");
-    predefinedSymbols.addOperator("]");
-    predefinedSymbols.addOperator(".");
-    predefinedSymbols.addOperator("==");
-    predefinedSymbols.addOperator(">");
-    predefinedSymbols.addOperator("<");
-    predefinedSymbols.addOperator(">=");
-    predefinedSymbols.addOperator("<=");
-    predefinedSymbols.addOperator("!=");
-    predefinedSymbols.addOperator("!");
-
-}
 
 void Lexer::setSource(Source* newSource)
 {
@@ -63,6 +45,8 @@ void Lexer::produceToken()
     else 
         currentToken = produceSpecial();
     */
+
+    // TODO czasem pierwsze produce zwróc¹ nullopt, chocia¿ na wierzchu jest sensowny char - mimo to trzeba zrobiæ jednego invalidTokena (np. wiod¹ce zera)
 }
 
 void Lexer::skipWhiteSpacesAndComments()
@@ -79,12 +63,17 @@ void Lexer::skipWhiteSpacesAndComments()
         {
             do {
                 mySource->processOneChar();
+                currChar = mySource->getCurrentChar();
             } while ( ( mySource->getCurrentChar() != '#') && !( mySource->isEndOfInput() ) );  // na wypadek, jakby ktoœ nie zamnk¹³ komentarza
+
+            // przejad³em ca³y komentarz, teraz muszê przejœæ nad znakiem koñca komentarza:
+            mySource->processOneChar();
+            currChar = mySource->getCurrentChar();
         }
     }
 }
 
-std::optional<std::unique_ptr<Token>> Lexer::produceIdentifier() //TODO jako optional. I reszta metod te¿
+std::optional<std::unique_ptr<Token>> Lexer::produceIdentifier()
 {
     if (!isalpha(mySource->getCurrentChar()))
         return std::nullopt;
@@ -97,50 +86,71 @@ std::optional<std::unique_ptr<Token>> Lexer::produceIdentifier() //TODO jako opt
         mySource->processOneChar();
         tempChar = mySource->getCurrentChar();
         
-        if (result.length() == MAX_IDENTIFIER_LENGTH)
+        if (result.length() > MAX_IDENTIFIER_LENGTH)
         {
             return std::make_unique<UnsafeToken>();
         }
 
     } while ( isalnum(tempChar) || tempChar == '_');
 
-    if (predefinedSymbols.isKeyword(result))
-        return std::make_unique<KeywordToken>();
+    std::optional<KeywordType> resultType;
+    if ( (resultType = predefinedSymbols.getKeywordType(result)) != std::nullopt )
+        return std::make_unique<KeywordToken>(result, resultType.value());
     else
-        return std::make_unique<IdentifierToken>();
+        return std::make_unique<IdentifierToken>(result);
 }
 
-/*
-bool Lexer::produceNumber()
+
+std::optional<std::unique_ptr<Token>> Lexer::produceNumber()
 {
     if (!isdigit(mySource->getCurrentChar()))
-        return false;
+        return std::nullopt;
 
-    int integerPart = parseSingleNumberFromSource();
+    std::optional<int> optionalIntegerPart;
+    int integralPart;
+    std::optional<double> optionalFractionalPart;
+    double fractionalPart;
+
+    if ((optionalIntegerPart = parseIntegerPartFromSource()) == std::nullopt)
+        return std::nullopt;
+    else
+        integralPart = *(optionalIntegerPart);
 
     if (mySource->getCurrentChar() == '.' && isdigit( mySource->getNextChar() ) )
     {
         mySource->processOneChar();
-        int fractionalPart = parseSingleNumberFromSource();
-        int length = floor(log10((float)fractionalPart)) + 1;   // TODO znowy problem z zerami wiod¹cymi
-        double x = fractionalPart / pow(10, length);
-        currentToken = new FloatToken( (double) integerPart + x);
+        if ((optionalFractionalPart = parseFractionalPartFromSource()) == std::nullopt)
+            return std::nullopt;
+        else
+            fractionalPart = *(optionalFractionalPart);
+
+        double result = integralPart + fractionalPart;
+        return std::make_unique<FloatToken>(std::to_string(result), result);
     }
     else
-        currentToken = new IntToken(integerPart);
-
-    return true;
+        return std::make_unique<IntToken>(std::to_string(integralPart), integralPart);
 }
 
-int Lexer::parseSingleNumberFromSource()
+
+std::optional<int> Lexer::parseIntegerPartFromSource()
 {
-    // TODO co z zerami wiod¹cymi
-    int result = 0;
+    int result = 0, tempResult = 0;
     char tempChar = mySource->getCurrentChar();
 
+    if (!isdigit(tempChar))
+        return std::nullopt;
+
+    if ( tempChar == '0' && isdigit(mySource->getNextChar()) )
+    {
+        mySource->processOneChar();     // Wywo³ujê processOneChar() ¿eby lexer nie zapêtli³ siê na tym zerze. Potraktuje je jako invalid i bêdzie analizowa³ dalej
+        return std::nullopt;
+    }
+
     do {
-        if (result < INT_MAX)
-            result = result * 10 + ((int)tempChar - (int)'0');
+        tempResult = result * 10 + ((int)tempChar - (int)'0');
+        if (tempResult < result)
+            return std::nullopt;       // to oznacza przekroczenie zakresu; w³aœciwie niekoniecznie, ale to jedyne co mogê sprawdziæ
+        result = tempResult;
         mySource->processOneChar();
         tempChar = mySource->getCurrentChar();
     } while (isdigit(tempChar));
@@ -148,28 +158,69 @@ int Lexer::parseSingleNumberFromSource()
     return result;
 }
 
-bool Lexer::produceOperator()
+std::optional<double> Lexer::parseFractionalPartFromSource()
 {
-    if (!isOperator(mySource->getCurrentChar()))
-        return false;
+    char tempChar = mySource->getCurrentChar();
 
-    char currChar = mySource->getCurrentChar();
+    if (!isdigit(tempChar))
+        return std::nullopt;
 
-    std::string operatorValue = "" + currChar;
-    mySource->processOneChar();
-    
-    currChar = mySource->getCurrentChar();
-    if (predefinedSymbols.isEndOfOperator(currChar))
+    int numberOfLeadingZeros = 0;
+    while (tempChar == '0')
     {
-        operatorValue += currChar;
+        ++numberOfLeadingZeros;
         mySource->processOneChar();
+        tempChar = mySource->getCurrentChar();
     }
 
-    currentToken = new OperatorToken(operatorValue);
-    
-    return true;
+    if (!isdigit(tempChar))
+        return 0.0;
+
+    std::optional<int> optFractionalPart;
+    int fractionalPart;
+    if ((optFractionalPart = parseIntegerPartFromSource()) == std::nullopt)
+        return std::nullopt;
+    else
+        fractionalPart = *optFractionalPart;
+
+    int length = (floor(log10((float)fractionalPart)) + 1) + numberOfLeadingZeros;
+    double x = fractionalPart / pow(10, length);
+
+    return x;
 }
 
+
+std::optional<std::unique_ptr<Token>> Lexer::produceOperator()
+{
+    char firstChar = mySource->getCurrentChar();
+    char secondChar = mySource->getNextChar();
+
+    std::optional<std::unique_ptr<Token>> result = predefinedSymbols.getOperatorToken(firstChar, secondChar);   // TODO tak mo¿na zrobiæ w wielu miejscach - czêsto wrzuca³em to bez sensu do ifa
+    
+    if (!result.has_value())
+        return std::nullopt;
+
+    std::string operatorContent = result.value().get()->getContent();
+    int operatorContentLength = operatorContent.length();
+    if (operatorContentLength == 1)
+    {
+        mySource->processOneChar();
+        return result;
+    }
+    else if (operatorContentLength == 2)
+    {
+        mySource->processOneChar();
+        mySource->processOneChar();
+        return result;
+    }
+    else
+    {
+        return std::nullopt;        // wydaje siê, ¿e to nie ma prawa wyst¹piæ
+        mySource->processOneChar(); // ¿eby nie zapêtliæ analizy leksykalnej w podejrzanym miejscu
+    }
+}
+
+/*
 bool Lexer::produceSpecial()
 {
     if (mySource->isEndOfInput())
@@ -187,13 +238,6 @@ bool Lexer::produceSpecial()
 */
 // TODO odkomentowywaæ sukcesuwnie pisz¹c testy
 
-bool Lexer::isOperator(char charToCheck)
-{
-    if (predefinedSymbols.isBeginningOfOperator(charToCheck))
-        return true;
-    else
-        return false;
-}
 
 std::unique_ptr<Token> Lexer::nextToken()
 {
@@ -208,4 +252,10 @@ std::unique_ptr<Token> Lexer::nextToken()
 SymbolTable* Lexer::getSymbolTable()
 {
     return &predefinedSymbols;
+}
+
+void Lexer::loadStuffIntoSymbolTable()
+{
+    predefinedSymbols.loadStandardKeywords();
+    predefinedSymbols.loadStandardOperators();
 }

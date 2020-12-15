@@ -9,7 +9,7 @@
 class Lexer
 {
 	std::unique_ptr<Token> currentToken;
-	Source* mySource;
+	Source* mySource;	// TODO to móg³by byæ unique_ptr, tylko nie mia³bym do niego dostêpu po setSource - do przemyœlenia - ew. shared_ptr
 
 	SymbolTable predefinedSymbols;
 
@@ -20,31 +20,28 @@ protected:	// chcê ¿eby klasa testuj¹ca mia³a dostêp do metod
 	
 	//metody tworz¹ce odpowiedni token:
 	std::optional<std::unique_ptr<Token>> produceIdentifier();
-	/*
 	std::optional<std::unique_ptr<Token>> produceNumber();
 	std::optional<std::unique_ptr<Token>> produceOperator();
 	std::unique_ptr<Token> produceSpecial();
-	*/
-	// TODO odkomentowywaæ sukcesuwnie pisz¹c testy
 
 	//pomocnicze:
 	void skipWhiteSpacesAndComments();
 	bool isOperator(char charToCheck);
-	//int parseSingleNumberFromSource();
-	// TODO odkomentowywaæ sukcesuwnie pisz¹c testy
+	std::optional<int> parseIntegerPartFromSource();
+	std::optional<double> parseFractionalPartFromSource();
 
 	const int MAX_IDENTIFIER_LENGTH = 50;	// TODO docelowo z pliku konfiguracyjnego
 
 public:
 	Lexer();
 	Lexer(Source* newSourcel);
-	void loadStandardOperators();
 	void setSource(Source* newSource);
 
 	// metoda wo³ana przez parser:
 	std::unique_ptr<Token> nextToken();
 
 	// tablica symboli:
-	SymbolTable* getSymbolTable();
+	SymbolTable* getSymbolTable();	// TODO nie wiem czy to potrzebne
+	void loadStuffIntoSymbolTable();
 
 };

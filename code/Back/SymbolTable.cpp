@@ -14,55 +14,23 @@ void SymbolTable::loadStandardKeywords()
 void SymbolTable::loadStandardOperators()
 {
     operators_map['='] = [](char x) { if (x == '=') return std::make_unique<OperatorToken>("==", OperatorType::EQUAL); else return std::make_unique<OperatorToken>("=", OperatorType::ASSIGN); };
-    operators_map['!'] = [](char x) { if (x == '=') return std::make_unique<OperatorToken>("!=", OperatorType::NOT_EQUAL); else return std::make_unique<OperatorToken>("=", OperatorType::NOT); };
-    operators_map['>'] = [](char x) { if (x == '=') return std::make_unique<OperatorToken>(">=", OperatorType::GREATER_EQUAL); else return std::make_unique<OperatorToken>("=", OperatorType::GREATER); };
+    operators_map['!'] = [](char x) { if (x == '=') return std::make_unique<OperatorToken>("!=", OperatorType::NOT_EQUAL); else return std::make_unique<OperatorToken>("!", OperatorType::NOT); };
+    operators_map['>'] = [](char x) { if (x == '=') return std::make_unique<OperatorToken>(">=", OperatorType::GREATER_EQUAL); else return std::make_unique<OperatorToken>(">", OperatorType::GREATER); };
 }
 
-bool SymbolTable::isOperator(std::string stringToCheck)
+
+std::optional<KeywordType> SymbolTable::getKeywordType(std::string keywordInString)
 {
-    if ( std::find(operators.begin(), operators.end(), stringToCheck) != operators.end() )
-        return true;
+    if (keywords_map.count(keywordInString) > 0)
+        return keywords_map[keywordInString];
     else
-        return false;
+        return std::nullopt;
 }
 
-bool SymbolTable::isKeyword(std::string stringToCheck)
+std::optional<std::unique_ptr<Token>> SymbolTable::getOperatorToken(char currentChar, char followingChar)
 {
-    if (std::find(keywords.begin(), keywords.end(), stringToCheck) != keywords.end())
-        return true;
+    if (operators_map.count(currentChar) > 0)
+        return operators_map[currentChar](followingChar);
     else
-        return false;
-}
-
-bool SymbolTable::isBeginningOfOperator(char charToCheck)
-{
-    if (std::find(firstCharsOfOperators.begin(), firstCharsOfOperators.end(), charToCheck) != firstCharsOfOperators.end())
-        return true;
-    else
-        return false;
-}
-
-bool SymbolTable::isEndOfOperator(char charToCheck)
-{
-    if (std::find(secondCharsOfOperators.begin(), secondCharsOfOperators.end(), charToCheck) != secondCharsOfOperators.end())
-        return true;
-    else
-        return false;
-}
-
-void SymbolTable::addKeyword(std::string newKeyword)
-{
-    keywords.insert(newKeyword);
-}
-
-void SymbolTable::addOperator(std::string newOpertaor)
-{
-    if (newOpertaor.length() > 0)
-    {
-        operators.insert(newOpertaor);
-        firstCharsOfOperators.insert(newOpertaor[0]);
-        
-        if (newOpertaor.length() == 2)
-            secondCharsOfOperators.insert(newOpertaor[1]);
-    }
+        return std::nullopt;
 }
