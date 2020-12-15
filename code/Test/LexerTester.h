@@ -18,4 +18,3 @@ public:
 	std::optional<int> test_parseIntegerPartFromSource();
 	std::optional<double> test_parseFractionalPartFromSource();
 };
-

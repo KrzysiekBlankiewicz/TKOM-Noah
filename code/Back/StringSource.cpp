@@ -29,7 +29,7 @@ StringSource::StringSource(std::string newString)
 
 void StringSource::processOneChar()
 {
-	char tempChar = currentChar;
+	bool areWeMovingToNextLine = (currentChar == '\n');
 
 	currentChar = nextChar;
 	
@@ -38,7 +38,7 @@ void StringSource::processOneChar()
 		nextChar = myString[nextCharPositionInString + 1];
 		++nextCharPositionInString;
 		++currentPosition;
-		if (tempChar == '\n')
+		if (areWeMovingToNextLine)
 		{
 			++currentLine;
 			currentPosition = 1;

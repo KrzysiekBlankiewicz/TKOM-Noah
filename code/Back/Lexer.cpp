@@ -1,8 +1,9 @@
-#include "Lexer.h"
+
 #include <algorithm>
 #include <iostream>
 #include <math.h>
 #include <optional>
+#include "Lexer.h"
 
 Lexer::Lexer()
 {
@@ -93,8 +94,8 @@ std::optional<std::unique_ptr<Token>> Lexer::produceIdentifier()
 
     } while ( isalnum(tempChar) || tempChar == '_');
 
-    std::optional<KeywordType> resultType;
-    if ( (resultType = predefinedSymbols.getKeywordType(result)) != std::nullopt )
+    std::optional<KeywordType> resultType = predefinedSymbols.getKeywordType(result);
+    if ( resultType != std::nullopt )
         return std::make_unique<KeywordToken>(result, resultType.value(), currentTokenLineInSource, currentTokenPositionInLine);
     else
         return std::make_unique<IdentifierToken>(result, currentTokenLineInSource, currentTokenPositionInLine);
@@ -105,12 +106,11 @@ std::optional<std::unique_ptr<Token>> Lexer::produceNumber()
     if (!isdigit(mySource->getCurrentChar()))
         return std::nullopt;
 
-    std::optional<int> optionalIntegerPart;
     int integralPart;
-    std::optional<double> optionalFractionalPart;
     double fractionalPart;
 
-    if ((optionalIntegerPart = parseIntegerPartFromSource()) == std::nullopt)
+    std::optional<int> optionalIntegerPart = parseIntegerPartFromSource();
+    if (optionalIntegerPart == std::nullopt)
         return std::nullopt;
     else
         integralPart = *(optionalIntegerPart);
@@ -118,7 +118,8 @@ std::optional<std::unique_ptr<Token>> Lexer::produceNumber()
     if (mySource->getCurrentChar() == '.' && isdigit( mySource->getNextChar() ) )
     {
         mySource->processOneChar();
-        if ((optionalFractionalPart = parseFractionalPartFromSource()) == std::nullopt)
+        std::optional<double> optionalFractionalPart = parseFractionalPartFromSource();
+        if (optionalFractionalPart == std::nullopt)
             return std::nullopt;
         else
             fractionalPart = *(optionalFractionalPart);
@@ -140,7 +141,7 @@ std::optional<int> Lexer::parseIntegerPartFromSource()
 
     if ( tempChar == '0' && isdigit(mySource->getNextChar()) )
     {
-        // mo¿naby wywo³aæ processOneChar() ¿eby lexer nie zapêtli³ siê na tym zerze, ale zrobi to produceSpecial()
+        // dobrze by by³o wywo³aæ processOneChar() ¿eby lexer nie zapêtli³ siê na tym wiod¹cym zerze, zrobi to produceSpecial()
         return std::nullopt;
     }
 
@@ -174,9 +175,9 @@ std::optional<double> Lexer::parseFractionalPartFromSource()
     if (!isdigit(tempChar))
         return 0.0;
 
-    std::optional<int> optFractionalPart;
     int fractionalPart;
-    if ((optFractionalPart = parseIntegerPartFromSource()) == std::nullopt)
+    std::optional<int> optFractionalPart = parseIntegerPartFromSource();
+    if (optFractionalPart == std::nullopt)
         return std::nullopt;
     else
         fractionalPart = *optFractionalPart;
@@ -192,7 +193,7 @@ std::optional<std::unique_ptr<Token>> Lexer::produceOperator()
     char firstChar = mySource->getCurrentChar();
     char secondChar = mySource->getNextChar();
 
-    std::optional<std::unique_ptr<Token>> result = predefinedSymbols.getOperatorToken(firstChar, secondChar);   // TODO tak mo¿na zrobiæ w wielu miejscach - czêsto wrzuca³em to bez sensu do ifa
+    std::optional<std::unique_ptr<Token>> result = predefinedSymbols.getOperatorToken(firstChar, secondChar);
     
     if (!result.has_value())
         return std::nullopt;
@@ -226,7 +227,7 @@ std::unique_ptr<Token> Lexer::produceSpecial()
     }
     else {
         mySource->processOneChar();
-        return std::make_unique<InvalidToken>(currentTokenLineInSource, currentTokenPositionInLine);    // TODO mo¿naby dodaæ przekazywanie do Invalid na jakim znaku siê zepsu³
+        return std::make_unique<InvalidToken>(currentTokenLineInSource, currentTokenPositionInLine);
     }
     return nullptr;
 }
@@ -240,12 +241,7 @@ std::unique_ptr<Token> Lexer::nextToken()
     else
         currentToken = std::make_unique<UnsafeToken>(0,0);
 
-    return std::move(currentToken); // TODO nie mam ju¿ potem dostêpu do currentToken... sprwadziæ, czy to nie szkodzi
-}
-
-SymbolTable* Lexer::getSymbolTable()
-{
-    return &predefinedSymbols;
+    return std::move(currentToken);
 }
 
 void Lexer::loadStuffIntoSymbolTable()

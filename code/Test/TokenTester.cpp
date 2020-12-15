@@ -1,5 +1,17 @@
 #include "TokenTester.h"
 
+std::map<int, std::string> TokenTester::namesOfTokenTypes = {
+	{TokenTester::IDENTIFIER, "IDENTIFIER"},
+	{TokenTester::KEYWORD, "KEYWORD" },
+	{TokenTester::OPERATOR, "OPERATOR"},
+	{TokenTester::INT, "INT"},
+	{TokenTester::FLOAT, "FLOAT"},
+	{TokenTester::INVALID, "INVALID"},
+	{TokenTester::EOT,	"EOT"},
+	{TokenTester::UNSAFE, "UNSAFE"},
+	{TokenTester::UNKNOWN, "UNKNOWN"},
+};
+
 int TokenTester::visit(Token* host)
 {
 	return UNKNOWN;

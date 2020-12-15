@@ -4,6 +4,7 @@
 
 #include "../Back/Lexer.h"
 #include "LexerTester.h"
+#include "TokenTester.h"
 #include "../Back/StringSource.h"
 
 

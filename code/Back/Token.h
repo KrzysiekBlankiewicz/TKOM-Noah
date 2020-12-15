@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "TokenTester.h"
+#include "TokenVisitor.h"
 #include "SymbolTable.h"
 
 class TokenVisitor;
