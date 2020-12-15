@@ -11,7 +11,6 @@ class EOTToken;
 class InvalidToken;
 class UnsafeToken;
 
-// TODO dodatkowa klasa abstrakcji w wizytorze tokenów
 
 class TokenVisitor
 {

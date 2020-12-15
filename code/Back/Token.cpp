@@ -2,6 +2,8 @@
 
 Token::Token()
 {
+	lineInSource = 0;
+	positionInLine = 0;
 }
 
 Token::Token(std::string newContent)
@@ -9,9 +11,38 @@ Token::Token(std::string newContent)
 	content = newContent;
 }
 
+Token::Token(int line, int position)
+{
+	lineInSource = line;
+	positionInLine = position;
+}
+
+Token::Token(std::string newContent, int line, int position)
+{
+	content = newContent;
+	lineInSource = line;
+	positionInLine = position;
+}
+
 std::string Token::getContent()
 {
 	return content;
+}
+
+void Token::setPosition(int newLine, int newPosition)
+{
+	lineInSource = newLine;
+	positionInLine = newPosition;
+}
+
+int Token::getLine()
+{
+	return lineInSource;
+}
+
+int Token::getPosition()
+{
+	return positionInLine;
 }
 
 int Token::accept(TokenVisitor* visitor)
@@ -29,9 +60,8 @@ IdentifierToken::IdentifierToken()
 {
 }
 
-IdentifierToken::IdentifierToken(std::string v/*, int id*/) : Token(v)
+IdentifierToken::IdentifierToken(std::string v, int line, int position) : Token(v, line, position)
 {
-	//symbolTableId = id;
 }
 
 int IdentifierToken::accept(TokenVisitor* visitor)
@@ -41,21 +71,17 @@ int IdentifierToken::accept(TokenVisitor* visitor)
 
 KeywordToken::KeywordToken()
 {
+	myType = KeywordType::NOT_A_KEYWORD;
 }
 
-KeywordToken::KeywordToken(std::string v): Token(v)
-{
-
-}
-
-KeywordToken::KeywordToken(KeywordType newType)
+KeywordToken::KeywordToken(std::string newContent, KeywordType newType, int line, int position): Token(newContent, line, position)
 {
 	myType = newType;
 }
 
-KeywordToken::KeywordToken(std::string newContent, KeywordType newType): Token(newContent)
+std::optional<double> KeywordToken::getValue()
 {
-	myType = newType;
+	return static_cast<double>(myType);
 }
 
 int KeywordToken::accept(TokenVisitor* visitor)
@@ -65,19 +91,15 @@ int KeywordToken::accept(TokenVisitor* visitor)
 
 OperatorToken::OperatorToken()
 {
+	myType = OperatorType::NOT_A_OPERATOR;
 }
 
-OperatorToken::OperatorToken(std::string newContent): Token(newContent)
-{
-
-}
-
-OperatorToken::OperatorToken(OperatorType newType)
+OperatorToken::OperatorToken(std::string newContent, OperatorType newType): Token(newContent)
 {
 	myType = newType;
 }
 
-OperatorToken::OperatorToken(std::string newContent, OperatorType newType): Token(newContent)
+OperatorToken::OperatorToken(std::string newContent, OperatorType newType, int line, int position): Token(newContent, line, position)
 {
 	myType = newType;
 }
@@ -89,19 +111,10 @@ int OperatorToken::accept(TokenVisitor* visitor)
 
 IntToken::IntToken()
 {
+	value = 0;
 }
 
-IntToken::IntToken(int newValue): Token(std::to_string(newValue))
-{
-	value = newValue;
-}
-
-IntToken::IntToken(std::string newContent): Token(newContent)
-{
-	value = std::stoi(newContent);
-}
-
-IntToken::IntToken(std::string newContent, int newValue): Token(newContent)
+IntToken::IntToken(std::string newContent, int newValue, int line, int position): Token(newContent, line, position)
 {
 	value = newValue;
 }
@@ -118,18 +131,10 @@ int IntToken::accept(TokenVisitor* visitor)
 
 FloatToken::FloatToken()
 {
+	value = 0.0;
 }
 
-FloatToken::FloatToken(double v)
-{
-	value = v;
-}
-
-FloatToken::FloatToken(std::string newContent): Token(newContent)
-{
-}
-
-FloatToken::FloatToken(std::string newContent, double newValue): Token(newContent)
+FloatToken::FloatToken(std::string newContent, double newValue, int line, int position): Token(newContent, line, position)
 {
 	value = newValue;
 }
@@ -146,7 +151,10 @@ int FloatToken::accept(TokenVisitor* visitor)
 
 EOTToken::EOTToken()
 {
+}
 
+EOTToken::EOTToken(int line, int position): Token(line, position)
+{
 }
 
 int EOTToken::accept(TokenVisitor* visitor)
@@ -156,7 +164,10 @@ int EOTToken::accept(TokenVisitor* visitor)
 
 InvalidToken::InvalidToken()
 {
+}
 
+InvalidToken::InvalidToken(int line, int position): Token(line, position)
+{
 }
 
 int InvalidToken::accept(TokenVisitor* visitor)
@@ -165,6 +176,10 @@ int InvalidToken::accept(TokenVisitor* visitor)
 }
 
 UnsafeToken::UnsafeToken()
+{
+}
+
+UnsafeToken::UnsafeToken(int line, int position): Token(line, position)
 {
 }
 

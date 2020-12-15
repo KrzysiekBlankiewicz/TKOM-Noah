@@ -18,13 +18,12 @@ std::optional<std::unique_ptr<Token>> LexerTester::test_produceOperator()
 {
     return this->produceOperator();
 }
-/*
+
 std::unique_ptr<Token> LexerTester::test_produceSpecial()
 {
     return this->produceSpecial();
 }
-*/
-// TODO odkomentowywaæ sukcesuwnie pisz¹c testy
+
 
 void LexerTester::test_skipWhiteSpacesAndComments()
 {

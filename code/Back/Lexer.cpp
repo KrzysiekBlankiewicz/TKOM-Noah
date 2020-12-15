@@ -8,6 +8,8 @@ Lexer::Lexer()
 {
     mySource = nullptr;
     currentToken = nullptr;
+    currentTokenLineInSource = 0;
+    currentTokenPositionInLine = 0;
 }
 
 Lexer::Lexer(Source* newSource)
@@ -15,7 +17,6 @@ Lexer::Lexer(Source* newSource)
     mySource = newSource;
     currentToken = nullptr;
 }
-
 
 void Lexer::setSource(Source* newSource)
 {
@@ -30,12 +31,12 @@ void Lexer::produceToken()
 
     skipWhiteSpacesAndComments();
 
-    //TODO zatrzasn¹æ pos tokenu 
+    currentTokenLineInSource = mySource->getCurrentLine();
+    currentTokenPositionInLine = mySource->getCurrentPosition();
     
     if ((returnedToken = produceIdentifier()) != std::nullopt)
         currentToken = std::move(*returnedToken);
 
-    /*
     else if ((returnedToken = produceNumber()) != std::nullopt)
         currentToken = std::move(*returnedToken);
 
@@ -44,9 +45,6 @@ void Lexer::produceToken()
 
     else 
         currentToken = produceSpecial();
-    */
-
-    // TODO czasem pierwsze produce zwróc¹ nullopt, chocia¿ na wierzchu jest sensowny char - mimo to trzeba zrobiæ jednego invalidTokena (np. wiod¹ce zera)
 }
 
 void Lexer::skipWhiteSpacesAndComments()
@@ -73,6 +71,8 @@ void Lexer::skipWhiteSpacesAndComments()
     }
 }
 
+
+
 std::optional<std::unique_ptr<Token>> Lexer::produceIdentifier()
 {
     if (!isalpha(mySource->getCurrentChar()))
@@ -88,18 +88,17 @@ std::optional<std::unique_ptr<Token>> Lexer::produceIdentifier()
         
         if (result.length() > MAX_IDENTIFIER_LENGTH)
         {
-            return std::make_unique<UnsafeToken>();
+            return std::make_unique<UnsafeToken>(currentTokenLineInSource, currentTokenPositionInLine);
         }
 
     } while ( isalnum(tempChar) || tempChar == '_');
 
     std::optional<KeywordType> resultType;
     if ( (resultType = predefinedSymbols.getKeywordType(result)) != std::nullopt )
-        return std::make_unique<KeywordToken>(result, resultType.value());
+        return std::make_unique<KeywordToken>(result, resultType.value(), currentTokenLineInSource, currentTokenPositionInLine);
     else
-        return std::make_unique<IdentifierToken>(result);
+        return std::make_unique<IdentifierToken>(result, currentTokenLineInSource, currentTokenPositionInLine);
 }
-
 
 std::optional<std::unique_ptr<Token>> Lexer::produceNumber()
 {
@@ -125,12 +124,11 @@ std::optional<std::unique_ptr<Token>> Lexer::produceNumber()
             fractionalPart = *(optionalFractionalPart);
 
         double result = integralPart + fractionalPart;
-        return std::make_unique<FloatToken>(std::to_string(result), result);
+        return std::make_unique<FloatToken>(std::to_string(result), result, currentTokenLineInSource, currentTokenPositionInLine);
     }
     else
-        return std::make_unique<IntToken>(std::to_string(integralPart), integralPart);
+        return std::make_unique<IntToken>(std::to_string(integralPart), integralPart, currentTokenLineInSource, currentTokenPositionInLine);
 }
-
 
 std::optional<int> Lexer::parseIntegerPartFromSource()
 {
@@ -142,7 +140,7 @@ std::optional<int> Lexer::parseIntegerPartFromSource()
 
     if ( tempChar == '0' && isdigit(mySource->getNextChar()) )
     {
-        mySource->processOneChar();     // Wywo³ujê processOneChar() ¿eby lexer nie zapêtli³ siê na tym zerze. Potraktuje je jako invalid i bêdzie analizowa³ dalej
+        // mo¿naby wywo³aæ processOneChar() ¿eby lexer nie zapêtli³ siê na tym zerze, ale zrobi to produceSpecial()
         return std::nullopt;
     }
 
@@ -189,7 +187,6 @@ std::optional<double> Lexer::parseFractionalPartFromSource()
     return x;
 }
 
-
 std::optional<std::unique_ptr<Token>> Lexer::produceOperator()
 {
     char firstChar = mySource->getCurrentChar();
@@ -205,38 +202,35 @@ std::optional<std::unique_ptr<Token>> Lexer::produceOperator()
     if (operatorContentLength == 1)
     {
         mySource->processOneChar();
+        result.value().get()->setPosition(currentTokenLineInSource, currentTokenPositionInLine);
         return result;
     }
     else if (operatorContentLength == 2)
     {
         mySource->processOneChar();
         mySource->processOneChar();
+        result.value().get()->setPosition(currentTokenLineInSource, currentTokenPositionInLine);
         return result;
     }
     else
     {
-        return std::nullopt;        // wydaje siê, ¿e to nie ma prawa wyst¹piæ
-        mySource->processOneChar(); // ¿eby nie zapêtliæ analizy leksykalnej w podejrzanym miejscu
+        return std::nullopt;
     }
 }
 
-/*
-bool Lexer::produceSpecial()
+std::unique_ptr<Token> Lexer::produceSpecial()
 {
     if (mySource->isEndOfInput())
     {
-        currentToken = new EOTToken();
-        return true;
+        return std::make_unique<EOTToken>(currentTokenLineInSource, currentTokenPositionInLine);
     }
     else {
         mySource->processOneChar();
-        currentToken = new InvalidToken();
-        return true;
+        return std::make_unique<InvalidToken>(currentTokenLineInSource, currentTokenPositionInLine);    // TODO mo¿naby dodaæ przekazywanie do Invalid na jakim znaku siê zepsu³
     }
+    return nullptr;
 }
 
-*/
-// TODO odkomentowywaæ sukcesuwnie pisz¹c testy
 
 
 std::unique_ptr<Token> Lexer::nextToken()
@@ -244,7 +238,7 @@ std::unique_ptr<Token> Lexer::nextToken()
     if (mySource != nullptr)
         produceToken();
     else
-        currentToken = std::make_unique<InvalidToken>();
+        currentToken = std::make_unique<UnsafeToken>(0,0);
 
     return std::move(currentToken); // TODO nie mam ju¿ potem dostêpu do currentToken... sprwadziæ, czy to nie szkodzi
 }

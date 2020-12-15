@@ -9,6 +9,7 @@
 class Lexer
 {
 	std::unique_ptr<Token> currentToken;
+	int currentTokenLineInSource, currentTokenPositionInLine;
 	Source* mySource;	// TODO to móg³by byæ unique_ptr, tylko nie mia³bym do niego dostêpu po setSource - do przemyœlenia - ew. shared_ptr
 
 	SymbolTable predefinedSymbols;

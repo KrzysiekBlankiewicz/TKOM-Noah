@@ -11,20 +11,28 @@ enum class OperatorType;
 class Token
 {
 	std::string content;
+	int lineInSource;
+	int positionInLine;
 public:
 	Token();
 	Token(std::string newContent);
+	Token(int line, int position);
+	Token(std::string newContent, int line, int position);
 	std::string getContent();
+	void setPosition(int newLine, int newPosition);
+	int getLine();
+	int getPosition();
+
 	virtual int accept(TokenVisitor* visitor);
 	virtual std::optional<double> getValue();
 };
 
 class IdentifierToken : public Token
 {
-	//int symbolTableId;
+	
 public:
 	IdentifierToken();
-	IdentifierToken(std::string v/*, int id*/);
+	IdentifierToken(std::string v, int line, int position);
 	virtual int accept(TokenVisitor* visitor);
 
 };
@@ -34,9 +42,8 @@ class KeywordToken : public Token
 	KeywordType myType;
 public:
 	KeywordToken();
-	KeywordToken(std::string v);
-	KeywordToken(KeywordType newType);
-	KeywordToken(std::string newContent, KeywordType newType);
+	KeywordToken(std::string newContent, KeywordType newType, int line, int position);
+	virtual std::optional<double> getValue();
 	virtual int accept(TokenVisitor* visitor);
 };
 
@@ -45,9 +52,8 @@ class OperatorToken : public Token
 	OperatorType myType;
 public:
 	OperatorToken();
-	OperatorToken(std::string newContent);
-	OperatorToken(OperatorType newType);
 	OperatorToken(std::string newContent, OperatorType newType);
+	OperatorToken(std::string newContent, OperatorType newType, int line, int position);
 	virtual int accept(TokenVisitor* visitor);
 };
 
@@ -56,9 +62,7 @@ class IntToken : public Token
 	int value;
 public:
 	IntToken();
-	IntToken(int newValue);
-	IntToken(std::string newContent);
-	IntToken(std::string newContent, int newValue);
+	IntToken(std::string newContent, int newValue, int line, int position);
 	virtual std::optional<double> getValue();
 	virtual int accept(TokenVisitor* visitor);
 };
@@ -68,9 +72,7 @@ class FloatToken : public Token
 	double value;
 public:
 	FloatToken();
-	FloatToken(double newValue);	// TODO nie ustawia content
-	FloatToken(std::string newContent);		// TODO nie ustawia value
-	FloatToken(std::string newContent, double newValue);
+	FloatToken(std::string newContent, double newValue, int line, int position);
 	virtual std::optional<double> getValue();
 	virtual int accept(TokenVisitor* visitor);
 };
@@ -79,6 +81,7 @@ class EOTToken : public Token
 {
 public:
 	EOTToken();
+	EOTToken(int line, int position);
 	virtual int accept(TokenVisitor* visitor);
 };
 
@@ -86,6 +89,7 @@ class InvalidToken : public Token
 {
 public:
 	InvalidToken();
+	InvalidToken(int line, int position);
 	virtual int accept(TokenVisitor* visitor);
 };
 
@@ -93,6 +97,7 @@ class UnsafeToken : public Token
 {
 public:
 	UnsafeToken();
+	UnsafeToken(int line, int position);
 	virtual int accept(TokenVisitor* visitor);
 };
 

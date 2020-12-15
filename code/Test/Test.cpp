@@ -183,9 +183,17 @@ BOOST_AUTO_TEST_SUITE(symbolTableTests)
 		std::optional<std::unique_ptr<Token>> t = table.getOperatorToken('a', 'b');
 		BOOST_CHECK(! t.has_value());
 	}
+	/*BOOST_AUTO_TEST_CASE(staticCastingKeywordTypeToDouble)
+	{
+		KeywordType k = KeywordType::FOR_KEYWORD;
+
+		BOOST_CHECK_EQUAL(static_cast<double>(k), 2.0);
+		k = KeywordType::NOT_A_KEYWORD;
+		BOOST_CHECK_EQUAL(static_cast<double>(k), 0.0);
+	}*/
 BOOST_AUTO_TEST_SUITE_END()
 
-	
+
 // LEXER TESTS:
 
 BOOST_AUTO_TEST_SUITE(produceIdentifierTests)
@@ -578,7 +586,14 @@ BOOST_AUTO_TEST_SUITE(skipWhiteSpacesAndCommentsTests)
 		l.test_skipWhiteSpacesAndComments();
 		BOOST_CHECK_EQUAL(s.getCurrentChar(), 'a');
 	}
+	BOOST_AUTO_TEST_CASE(onTwolineComment)
+	{
+		StringSource s(" #cwhv \n c#	a");
+		LexerTester l(&s);
 
+		l.test_skipWhiteSpacesAndComments();
+		BOOST_CHECK_EQUAL(s.getCurrentChar(), 'a');
+	}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(produceNumberTests)
@@ -767,6 +782,36 @@ BOOST_AUTO_TEST_SUITE(produceNumberTests)
 		BOOST_CHECK_EQUAL(result.value().get()->getValue().value(), 123);
 		BOOST_CHECK_EQUAL(source.getCurrentChar(), '.');
 	}
+	BOOST_AUTO_TEST_CASE(doesItLeavelastCharOfTooBigNumberAsCurrent) // jest to potrzebne ¿eby produceOperator po produceNumber nie zwróci³o tokenu
+	{
+		StringSource source("12345678901");
+		LexerTester l(&source);
+		TokenTester t;
+
+		std::optional<std::unique_ptr<Token>> result = l.test_produceNumber();
+		BOOST_CHECK( ! result.has_value());
+		BOOST_CHECK_EQUAL(source.getCurrentChar(), '1');
+	}
+	BOOST_AUTO_TEST_CASE(doesItConsumeOnlyFirstNMinusOneZerosFromLeadingZerosToInvalidToken)	// jest to potrzebne ¿eby produceOperator po produceNumber nie zwróci³o tokenu
+	{
+		StringSource source("00.6123");
+		LexerTester l(&source);
+		TokenTester t;
+
+		std::optional<std::unique_ptr<Token>> result = l.test_produceNumber();
+		BOOST_CHECK( ! result.has_value());
+		BOOST_CHECK_EQUAL(source.getCurrentChar(), '0');
+	}
+	BOOST_AUTO_TEST_CASE(doesItLeavePartOfTooBigFractionalPartAsCurrent)
+	{
+		StringSource source("2.12345678901");
+		LexerTester l(&source);
+		TokenTester t;
+
+		std::optional<std::unique_ptr<Token>> result = l.test_produceNumber();
+		BOOST_CHECK( ! result.has_value());
+		BOOST_CHECK_EQUAL(source.getCurrentChar(), '1');
+	}
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -859,124 +904,438 @@ BOOST_AUTO_TEST_SUITE(produceOperatorTests)
 	}
 BOOST_AUTO_TEST_SUITE_END()
 
-
-// TODO porduceSpecialTests
-
-// TODO odkomentowaæ testy "integracyjne":
-/*
-std::string indentifierString = "scdsd";
-std::string intString = "245";
-std::string floatString = "854.05";
-std::string operatorString = ">=";
-std::string unknownString = "%";
-std::vector < std::pair<std::string, int>> stringsVector = { {indentifierString, TokenTester::IDENTIFIER},
-															{intString, TokenTester::INT},
-															{floatString, TokenTester::FLOAT},
-															{operatorString, TokenTester::OPERATOR},
-															{unknownString, TokenTester::INVALID} };
-
-std::string sumStringVector(std::vector<std::pair<std::string, int>>* v)
+BOOST_AUTO_TEST_SUITE(produceSpecialTests)
+BOOST_AUTO_TEST_CASE(onSourceLengthEqualZero)
 {
-	std::string result = "";
-	for (auto a : *v)
-	{
-		result += a.first;
-		result += " ";
-	}
-	return result;
+	StringSource s("");
+	LexerTester l(&s);
+	TokenTester t;
+
+	std::optional<std::unique_ptr<Token>> result = l.test_produceSpecial();
+	BOOST_CHECK(result.has_value());
+	BOOST_CHECK_EQUAL(result.value().get()->accept(&t), TokenTester::EOT);
+	BOOST_CHECK(s.isEndOfInput());
 }
+BOOST_AUTO_TEST_CASE(onBeingAtTheEndOfSource)
+{
+	StringSource s("a");
+	LexerTester l(&s);
+	TokenTester t;
+	s.processOneChar();
+
+	std::optional<std::unique_ptr<Token>> result = l.test_produceSpecial();
+	BOOST_CHECK(result.has_value());
+	BOOST_CHECK_EQUAL(result.value().get()->accept(&t), TokenTester::EOT);
+	BOOST_CHECK(s.isEndOfInput());
+}
+BOOST_AUTO_TEST_CASE(onSourceBeginningWithAlpha)
+{
+	StringSource s("abc");
+	LexerTester l(&s);
+	TokenTester t;
+
+	std::optional<std::unique_ptr<Token>> result = l.test_produceSpecial();
+	BOOST_CHECK(result.has_value());
+	BOOST_CHECK_EQUAL(result.value().get()->accept(&t), TokenTester::INVALID);
+	BOOST_CHECK_EQUAL(s.getCurrentChar(), 'b');
+}
+BOOST_AUTO_TEST_CASE(onSourceBeginningWithNum)
+{
+	StringSource s("123abc");
+	LexerTester l(&s);
+	TokenTester t;
+
+	std::optional<std::unique_ptr<Token>> result = l.test_produceSpecial();
+	BOOST_CHECK(result.has_value());
+	BOOST_CHECK_EQUAL(result.value().get()->accept(&t), TokenTester::INVALID);
+	BOOST_CHECK_EQUAL(s.getCurrentChar(), '2');
+}
+BOOST_AUTO_TEST_CASE(onSourceBeginningWithSth)
+{
+	StringSource s("*");
+	LexerTester l(&s);
+	TokenTester t;
+
+	std::optional<std::unique_ptr<Token>> result = l.test_produceSpecial();
+	BOOST_CHECK(result.has_value());
+	BOOST_CHECK_EQUAL(result.value().get()->accept(&t), TokenTester::INVALID);
+	BOOST_CHECK(s.isEndOfInput());
+}
+BOOST_AUTO_TEST_SUITE_END()
 
 
-// TODO szczególny przypadek do sprawdzenia: kiedy mamy inwalidzki number - trzeba omin¹æ ileœ (nie wiem ile...) znaków i jechaæ dalej z analiz¹
-
-BOOST_AUTO_TEST_SUITE(lexerTests)
-
+BOOST_AUTO_TEST_SUITE(nextTokenTests)
 	BOOST_AUTO_TEST_CASE(identifierTokenTest)
 	{
-		StringSource s(indentifierString);
+		StringSource s("abc_34a");
 		Lexer l;
 		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
 		TokenTester t;
 
-		BOOST_CHECK_EQUAL((l.nextToken())->accept(&t), t.IDENTIFIER);
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "abc_34a");
 	}
 	BOOST_AUTO_TEST_CASE(keywordTokenTest)
 	{
-		StringSource s(indentifierString);
+		StringSource s("return");
 		Lexer l;
-		l.getSymbolTable()->addKeyword(indentifierString);
 		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
 		TokenTester t;
 
-		BOOST_CHECK_EQUAL((l.nextToken())->accept(&t), t.KEYWORD);
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.KEYWORD);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL( token->getValue().value(), static_cast<double>(KeywordType::RETURN_KEYWORD) );
+		BOOST_CHECK_EQUAL(token->getContent(), "return");
 	}
 	BOOST_AUTO_TEST_CASE(intTokenTest)
 	{
-		StringSource s(intString);
+		StringSource s("342516");
 		Lexer l;
 		l.setSource(&s);
 		TokenTester t;
 
-		BOOST_CHECK_EQUAL((l.nextToken())->accept(&t), t.INT);
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INT);
+		BOOST_CHECK_EQUAL(token->getContent(), "342516");
+		BOOST_CHECK( token->getValue().has_value() );
+		BOOST_CHECK_EQUAL(token->getValue().value(), 342516.0);
 	}
 	BOOST_AUTO_TEST_CASE(floatTokenTest)
 	{
-		StringSource s(floatString);
+		StringSource s("123.456");
 		Lexer l;
 		l.setSource(&s);
 		TokenTester t;
 
-		BOOST_CHECK_EQUAL((l.nextToken())->accept(&t), t.FLOAT);
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.FLOAT);
+		//BOOST_CHECK_EQUAL(token->getContent(), "123.456");
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 123.456);
 	}
 	BOOST_AUTO_TEST_CASE(operatorTokenTest)
 	{
-		StringSource s(operatorString);
+		StringSource s(">=");
 		Lexer l;
 		l.setSource(&s);
-		l.getSymbolTable()->addOperator(operatorString);
+		l.loadStuffIntoSymbolTable();
 		TokenTester t;
 
-		BOOST_CHECK_EQUAL((l.nextToken())->accept(&t), t.OPERATOR);
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.OPERATOR);
+		BOOST_CHECK_EQUAL(token->getContent(), ">=");
 	}
-
 	BOOST_AUTO_TEST_CASE(unknownTokenTest)
 	{
-		StringSource s(unknownString);
+		StringSource s("%");
 		Lexer l;
 		l.setSource(&s);
 		TokenTester t;
 
-		BOOST_CHECK_EQUAL((l.nextToken())->accept(&t), t.INVALID);
-	}
-	BOOST_AUTO_TEST_CASE(multipleTokenTest)
-	{
-		std::string input = sumStringVector(&stringsVector);
-		StringSource s(input);
-		Lexer l;
-		l.setSource(&s);
-		l.getSymbolTable()->addOperator(operatorString);
-		TokenTester t;
-
-		for (auto a : stringsVector)
-		{
-			BOOST_CHECK_EQUAL((l.nextToken())->accept(&t), a.second);
-		}
-	}
-	BOOST_AUTO_TEST_CASE(multipleShuffledTokenTest)
-	{
-		//std::random_shuffle(stringsVector.begin(), stringsVector.end()); // TODO nie wiem dlaczego nie m tego w std...
-		std::string input = sumStringVector(&stringsVector);
-
-		StringSource s(input);
-		Lexer l;
-		l.setSource(&s);
-		l.getSymbolTable()->addOperator(operatorString);
-		TokenTester t;
-
-		for (auto a : stringsVector)
-		{
-			BOOST_CHECK_EQUAL((l.nextToken())->accept(&t), a.second);
-		}
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INVALID);
 	}
 BOOST_AUTO_TEST_SUITE_END()
-*/
+
+BOOST_AUTO_TEST_SUITE(tokenPositionTests)
+	BOOST_AUTO_TEST_CASE(atTheBeginningCase)
+	{
+		StringSource s("a");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 1);
+	}
+	BOOST_AUTO_TEST_CASE(randomPositionsInOneLineCase)
+	{
+		StringSource s("abd 75.8>= % 4 #8273#");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 1);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 5);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 9);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 12);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 14);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 22);
+	}
+	BOOST_AUTO_TEST_CASE(multipleLinesCase)
+	{
+		StringSource s(" abd \n75.8>=\n % 4 #82\n73#");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+
+		//abd:
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 2);
+		//float
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 2);
+		BOOST_CHECK_EQUAL(token->getPosition(), 1);
+		//>=
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 2);
+		BOOST_CHECK_EQUAL(token->getPosition(), 5);
+		//%
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 3);
+		BOOST_CHECK_EQUAL(token->getPosition(), 2);
+		//4
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 3);
+		BOOST_CHECK_EQUAL(token->getPosition(), 4);
+		//EOT
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->getLine(), 4);
+		BOOST_CHECK_EQUAL(token->getPosition(), 4);
+	}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(aLaIntegrationTests)
+	BOOST_AUTO_TEST_CASE(multipleTokenTest)
+	{
+		StringSource s(" abc 123=34.5 >= #ab%r# % if");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+		TokenTester t;
+
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "abc");
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 2);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INT);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 123);
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 6);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.OPERATOR);
+		BOOST_CHECK_EQUAL(token->getContent(), "=");
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 9);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.FLOAT);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 34.5);
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 10);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.OPERATOR);
+		BOOST_CHECK_EQUAL(token->getContent(), ">=");
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 15);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INVALID);
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 25);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.KEYWORD);
+		BOOST_CHECK_EQUAL(token->getContent(), "if");
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), static_cast<double>(KeywordType::IF_KEYWORD));
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 27);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.EOT);
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 29);
+
+		//na wszelki wypadek jeszcze raz:
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.EOT);
+		BOOST_CHECK_EQUAL(token->getLine(), 1);
+		BOOST_CHECK_EQUAL(token->getPosition(), 29);
+	}
+	BOOST_AUTO_TEST_CASE(leadingZeroInNumberCase)
+	{
+		StringSource s(" abc 0123=34.05");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+		TokenTester t;
+
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "abc");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INVALID);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INT);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 123);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.OPERATOR);
+		BOOST_CHECK_EQUAL(token->getContent(), "=");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.FLOAT);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 34.05);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.EOT);
+	}
+	BOOST_AUTO_TEST_CASE(leadingZerosInNumberCase)
+	{
+		StringSource s(" abc 00123=34.05");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+		TokenTester t;
+
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "abc");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INVALID);
+		
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INVALID);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INT);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 123);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.OPERATOR);
+		BOOST_CHECK_EQUAL(token->getContent(), "=");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.FLOAT);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 34.05);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.EOT);
+	}
+	BOOST_AUTO_TEST_CASE(operatorAfterInvalidNumberCase)
+	{
+		StringSource s(" a 00= a");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+		TokenTester t;
+
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "a");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INVALID);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INT);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 0);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.OPERATOR);
+		BOOST_CHECK_EQUAL(token->getContent(), "=");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "a");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.EOT);
+	}
+	BOOST_AUTO_TEST_CASE(operatorAfterTooLongNumberCase)	// Je¿eli liczba jest za du¿a, konsumujemy j¹ do cyfry, która spowodowa³a przepe³nienie w³¹cznie
+	{
+		StringSource s(" a 12345678901= a");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+		TokenTester t;
+
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "a");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INVALID);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.OPERATOR);
+		BOOST_CHECK_EQUAL(token->getContent(), "=");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "a");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.EOT);
+	}
+	BOOST_AUTO_TEST_CASE(restOfTooBigNumberAsAnotherNumberCase)
+	{
+		StringSource s(" a 1234567890127= a");
+		Lexer l;
+		l.setSource(&s);
+		l.loadStuffIntoSymbolTable();
+		TokenTester t;
+
+		std::unique_ptr<Token> token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "a");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INVALID);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.INT);
+		BOOST_CHECK(token->getValue().has_value());
+		BOOST_CHECK_EQUAL(token->getValue().value(), 27);
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.OPERATOR);
+		BOOST_CHECK_EQUAL(token->getContent(), "=");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.IDENTIFIER);
+		BOOST_CHECK_EQUAL(token->getContent(), "a");
+
+		token = l.nextToken();
+		BOOST_CHECK_EQUAL(token->accept(&t), t.EOT);
+	}
+BOOST_AUTO_TEST_SUITE_END()

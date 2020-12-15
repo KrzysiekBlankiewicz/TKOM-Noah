@@ -7,6 +7,7 @@ StringSource::StringSource(std::string newString)
 	stringLength = newString.length();
 	nextCharPositionInString = 1;
 	endOfInput = false;
+	currentLine = currentPosition = 1;
 
 	if (stringLength < 1)
 	{
@@ -28,16 +29,32 @@ StringSource::StringSource(std::string newString)
 
 void StringSource::processOneChar()
 {
+	char tempChar = currentChar;
+
 	currentChar = nextChar;
+	
 	if (nextCharPositionInString < stringLength - 1 && nextCharPositionInString >= 0)
 	{
 		nextChar = myString[nextCharPositionInString + 1];
 		++nextCharPositionInString;
+		++currentPosition;
+		if (tempChar == '\n')
+		{
+			++currentLine;
+			currentPosition = 1;
+		}
 	}
 	else if (nextCharPositionInString == stringLength - 1)
 	{
 		nextChar = CHAR_AFTER_INPUT_END;
 		++nextCharPositionInString;
+		++currentPosition;
+	}
+	else if (nextCharPositionInString == stringLength)
+	{
+		nextChar = CHAR_AFTER_INPUT_END;
+		++currentPosition;
+		endOfInput = true;
 	}
 	else if (nextCharPositionInString > stringLength - 1)
 	{

@@ -15,3 +15,13 @@ bool Source::isEndOfInput()
 {
 	return endOfInput;
 }
+
+int Source::getCurrentLine()
+{
+	return currentLine;
+}
+
+int Source::getCurrentPosition()
+{
+	return currentPosition;
+}
