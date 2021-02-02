@@ -1,6 +1,6 @@
 (*
 Krzysztof Blankiewicz
-projekt z TKOM - język UnoG
+projekt z TKOM - język Noah
 *)
 
 program = init, classes, objects, functions, main;

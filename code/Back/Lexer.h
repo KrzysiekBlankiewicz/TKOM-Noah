@@ -34,6 +34,8 @@ protected:	// chcê ¿eby klasa testuj¹ca mia³a dostêp do metod
 
 	const int MAX_IDENTIFIER_LENGTH = 50;	// docelowo z pliku konfiguracyjnego
 
+	// char () process i currentChar w jednym
+
 public:
 	Lexer();
 	Lexer(Source* newSourcel);
@@ -43,6 +45,6 @@ public:
 	std::unique_ptr<Token> nextToken();
 
 	// tablica symboli:
-	void loadStuffIntoSymbolTable();
+	void loadStuffIntoSymbolTable();	// TODO lepiej przenieœæ do private/protected
 
 };

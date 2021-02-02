@@ -83,14 +83,15 @@ std::optional<std::unique_ptr<Token>> Lexer::produceIdentifier()
     char tempChar = mySource->getCurrentChar();
 
     do {
-        result += tempChar;
-        mySource->processOneChar();
-        tempChar = mySource->getCurrentChar();
-        
-        if (result.length() > MAX_IDENTIFIER_LENGTH)
+
+        if (result.length() + 1 > MAX_IDENTIFIER_LENGTH)
         {
             return std::make_unique<UnsafeToken>(currentTokenLineInSource, currentTokenPositionInLine);
         }
+
+        result += tempChar;
+        mySource->processOneChar();
+        tempChar = mySource->getCurrentChar();
 
     } while ( isalnum(tempChar) || tempChar == '_');
 
@@ -119,12 +120,14 @@ std::optional<std::unique_ptr<Token>> Lexer::produceNumber()
     {
         mySource->processOneChar();
         std::optional<double> optionalFractionalPart = parseFractionalPartFromSource();
+        // TODO je¿eli przepe³nienie we fractionalPart, to nullopt. Nie odró¿niam od braku fractionalPart
         if (optionalFractionalPart == std::nullopt)
             return std::nullopt;
         else
             fractionalPart = *(optionalFractionalPart);
 
         double result = integralPart + fractionalPart;
+        // TODO przy tym rzutowaniu mo¿e byæ problem z zakresami
         return std::make_unique<FloatToken>(std::to_string(result), result, currentTokenLineInSource, currentTokenPositionInLine);
     }
     else
@@ -149,6 +152,7 @@ std::optional<int> Lexer::parseIntegerPartFromSource()
         tempResult = result * 10 + ((int)tempChar - (int)'0');
         if (tempResult < result)
             return std::nullopt;       // to oznacza przekroczenie zakresu; w³aœciwie niekoniecznie, ale to jedyne co mogê sprawdziæ
+                                        // throw exception z informacj¹, ¿e > MAX_INT
         result = tempResult;
         mySource->processOneChar();
         tempChar = mySource->getCurrentChar();
@@ -217,6 +221,7 @@ std::optional<std::unique_ptr<Token>> Lexer::produceOperator()
     {
         return std::nullopt;
     }
+    // lambda mog³aby zwracaæ lambdê, która to zrobi
 }
 
 std::unique_ptr<Token> Lexer::produceSpecial()

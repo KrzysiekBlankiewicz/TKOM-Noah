@@ -13,6 +13,7 @@ class Token
 	std::string content;
 	int lineInSource;
 	int positionInLine;
+	// dodatkowo bezwzgl. pozycja
 public:
 	Token();
 	Token(std::string newContent);

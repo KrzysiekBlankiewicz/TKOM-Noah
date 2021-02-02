@@ -11,8 +11,6 @@ int main()
 {
 	std::string s = "abc 3 fr \n 00.05 #y\nbj# a";
 
-	//std::cin >> s;
-
 	StringSource source(s);
 	Lexer l;
 	TokenTester t;
